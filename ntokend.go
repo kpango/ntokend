@@ -86,8 +86,10 @@ func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 	go func() {
 		var err error
 		err = t.update()
+		fch := make(chan struct{})
 		if err != nil {
 			glg.Error(err)
+			fch <- struct{}{}
 		}
 
 		ticker := time.NewTicker(t.refreshDuration)
@@ -96,10 +98,18 @@ func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 			case <-ctx.Done():
 				ticker.Stop()
 				return
+			case <-fch:
+				err = t.update()
+				if err != nil {
+					glg.Error(err)
+					time.Sleep(time.Second)
+					fch <- struct{}{}
+				}
 			case <-ticker.C:
 				err = t.update()
 				if err != nil {
 					glg.Error(err)
+					fch <- struct{}{}
 				}
 			}
 		}
