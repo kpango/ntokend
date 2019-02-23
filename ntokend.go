@@ -2,7 +2,6 @@ package ntokend
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"unsafe"
 
 	"github.com/kpango/glg"
-	"github.com/pkg/errors"
 	"github.com/yahoo/athenz/libs/go/zmssvctoken"
 )
 
@@ -46,113 +44,17 @@ type rawToken struct {
 	expiration time.Time
 }
 
-var (
-	// ErrTokenNotFound represents a error the the token is not found
-	ErrTokenNotFound = errors.New("Error:\ttoken not found")
-)
-
 // TokenProvider represents a token provider function to get the role token
 type TokenProvider func() (string, error)
 
-// tokenOption represents a functional options pattern interface
-type tokenOption func(*token) error
-
-// TokenFilePath represents a functional options pattern setter method to set the token file path value
-func TokenFilePath(path string) tokenOption {
-	return func(tok *token) error {
-		tok.tokenFilePath = path
-		return nil
-	}
-}
-
-// EnableValidate represents a functional options pattern setter method to enable validate token flag value
-func EnableValidate() tokenOption {
-	return func(tok *token) error {
-		tok.validateToken = true
-		return nil
-	}
-}
-
-// DisableValidate represents a functional options pattern setter method to disable validate token flag value
-func DisableValidate() tokenOption {
-	return func(tok *token) error {
-		tok.validateToken = false
-		return nil
-	}
-}
-
-// TokenExpiration represents a functional options pattern setter method to set the token expiration period
-func TokenExpiration(dur time.Duration) tokenOption {
-	return func(tok *token) error {
-		tok.tokenExpiration = dur
-		return nil
-	}
-}
-
-// RefreshDuration represents a functional options pattern setter method to set the token refresh duration
-func RefreshDuration(dur time.Duration) tokenOption {
-	return func(tok *token) error {
-		tok.refreshDuration = dur
-		return nil
-	}
-}
-
-// AthenzDomain represents a functional options pattern setter method to set the domain name of the token builder
-func AthenzDomain(domain string) tokenOption {
-	return func(tok *token) error {
-		tok.athenzDomain = domain
-		return nil
-	}
-}
-
-// ServiceName represents a functional options pattern setter method to set the service name of the token builder
-func ServiceName(name string) tokenOption {
-	return func(tok *token) error {
-		tok.serviceName = name
-		return nil
-	}
-}
-
-// KeyVersion represents a functional options pattern setter method to set the key version of the token builder
-func KeyVersion(ver string) tokenOption {
-	return func(tok *token) error {
-		tok.keyVersion = ver
-		return nil
-	}
-}
-
-// KeyData represents a functional options pattern setter method to set the key data of the token builder
-func KeyData(keyData []byte) tokenOption {
-	return func(tok *token) error {
-		tok.keyData = keyData
-		return nil
-	}
-}
-
-// Hostname represents a functional options pattern setter method to set the hostname of the token builder
-func Hostname(hostname string) tokenOption {
-	return func(tok *token) error {
-		tok.hostname = hostname
-		return nil
-	}
-}
-
-// IPAddr represents a functional options pattern setter method to set the IP address of the token builder
-func IPAddr(ipAddr string) tokenOption {
-	return func(tok *token) error {
-		tok.ipAddr = ipAddr
-		return nil
-	}
-}
-
 // New return TokenService
 // This function will initialize the TokenService object with the tokenOptions
-func New(tokenOptions ...tokenOption) (TokenService, error) {
+func New(opts ...Option) (TokenService, error) {
 	tok := &token{
 		token: new(atomic.Value),
 	}
 
-	for _, to := range tokenOptions {
+	for _, to := range opts {
 		if err := to(tok); err != nil {
 			return nil, err
 		}
@@ -160,8 +62,8 @@ func New(tokenOptions ...tokenOption) (TokenService, error) {
 
 	// create token builder
 	tokBuilder, err := zmssvctoken.NewTokenBuilder(tok.athenzDomain, tok.serviceName, tok.keyData, tok.keyVersion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ZMS SVC Token Builder\nAthenzDomain:\t%s\nServiceName:\t%s\nKeyVersion:\t%s\nError: %v", tok.athenzDomain, tok.serviceName, tok.keyVersion, err)
+	if err != nil || tokBuilder == nil {
+		return nil, ErrTokenBuilder(tok.athenzDomain, tok.serviceName, tok.keyVersion, err)
 	}
 	if tok.hostname != "" {
 		tokBuilder.SetHostname(tok.hostname)
@@ -251,7 +153,7 @@ func (t *token) loadToken() (ntoken string, err error) {
 	if t.validateToken {
 		err = newRawToken(ntoken).isValid()
 		if err != nil {
-			return "", fmt.Errorf("invalid server identity token:\t%s", err.Error())
+			return "", ErrInvalidToken(err)
 		}
 	}
 	return ntoken, nil
@@ -302,13 +204,13 @@ func newRawToken(token string) *rawToken {
 func (r *rawToken) isValid() error {
 	switch {
 	case r.domain == "":
-		return fmt.Errorf("no domain in token")
+		return ErrDomainNotFound
 	case r.name == "":
-		return fmt.Errorf("no name in token")
+		return ErrServiceNameNotFound
 	case r.signature == "":
-		return fmt.Errorf("no signature in token")
+		return ErrSignatureNotFound
 	case r.expiration.Before(time.Now()):
-		return fmt.Errorf("token has expired")
+		return ErrExpirationNotFound
 	}
 	return nil
 }

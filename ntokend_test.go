@@ -21,7 +21,7 @@ func init() {
 
 func TestNew(t *testing.T) {
 	type args struct {
-		tokenOptions []tokenOption
+		Options []Option
 	}
 	type test struct {
 		name       string
@@ -38,7 +38,7 @@ func TestNew(t *testing.T) {
 			return test{
 				name: "Token option return error",
 				args: args{
-					tokenOptions: []tokenOption{
+					Options: []Option{
 						func(tok *token) error {
 							return dummyErr
 						},
@@ -51,7 +51,7 @@ func TestNew(t *testing.T) {
 			return test{
 				name: "Error create builder",
 				args: args{
-					tokenOptions: []tokenOption{},
+					Options: []Option{},
 				},
 				wantErr: fmt.Errorf(`failed to create ZMS SVC Token Builder
 AthenzDomain:	
@@ -78,7 +78,7 @@ Error: Unable to create signer: Unable to load private key`),
 			return test{
 				name: "return success",
 				args: args{
-					tokenOptions: []tokenOption{
+					Options: []Option{
 						AthenzDomain(d), ServiceName(s), KeyVersion(kv), KeyData(kd), Hostname(h), IPAddr(i),
 						TokenFilePath(tfp), TokenExpiration(texp), RefreshDuration(rdur), DisableValidate(),
 					},
@@ -170,7 +170,7 @@ Error: Unable to create signer: Unable to load private key`),
 			return test{
 				name: "check token option order",
 				args: args{
-					tokenOptions: []tokenOption{
+					Options: []Option{
 						// dummy value
 						AthenzDomain(dummy), ServiceName(dummy), KeyVersion(dummy), KeyData([]byte{}), Hostname(dummy), IPAddr(dummy),
 						TokenFilePath(dummy), TokenExpiration(time.Hour), RefreshDuration(time.Hour), EnableValidate(),
@@ -255,7 +255,7 @@ Error: Unable to create signer: Unable to load private key`),
 				defer tt.afterFunc()
 			}
 
-			got, err := New(tt.args.tokenOptions...)
+			got, err := New(tt.args.Options...)
 			if tt.wantErr == nil && err != nil {
 				t.Errorf("failed to instantiate, err: %v", err)
 				return
