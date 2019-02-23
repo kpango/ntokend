@@ -53,11 +53,7 @@ func TestNew(t *testing.T) {
 				args: args{
 					Options: []Option{},
 				},
-				wantErr: fmt.Errorf(`failed to create ZMS SVC Token Builder
-AthenzDomain:	
-ServiceName:	
-KeyVersion:	
-Error: Unable to create signer: Unable to load private key`),
+				wantErr: ErrTokenBuilder("", "", "", errors.New("Unable to create signer: Unable to load private key")),
 			}
 		}(),
 		func() test {
@@ -638,7 +634,6 @@ func Test_token_loadToken(t *testing.T) {
 					tb.(*mockTokenBuilder).valueFunc = func() (string, error) {
 						return "", fmt.Errorf("Error")
 					}
-
 					return tb
 				}(),
 			},
@@ -657,7 +652,6 @@ func Test_token_loadToken(t *testing.T) {
 					tb.(*mockTokenBuilder).valueFunc = func() (string, error) {
 						return "token", nil
 					}
-
 					return tb
 				}(),
 			},
@@ -709,7 +703,7 @@ func Test_token_loadToken(t *testing.T) {
 				refreshDuration: time.Second,
 				builder:         NewMockTokenBuilder(),
 			},
-			wantErr: fmt.Errorf("invalid server identity token:	no domain in token"),
+			wantErr: ErrInvalidToken(ErrDomainNotFound),
 		},
 	}
 	for _, tt := range tests {
@@ -1067,7 +1061,7 @@ func Test_rawToken_isValid(t *testing.T) {
 				signature:  "dummySign",
 				expiration: time.Unix(0, 0),
 			},
-			wantErr: fmt.Errorf("token has expired"),
+			wantErr: ErrTokenExpired,
 		},
 		{
 			name: "isValid no domain",
@@ -1077,7 +1071,7 @@ func Test_rawToken_isValid(t *testing.T) {
 				signature:  "dummySign",
 				expiration: time.Now().AddDate(0, 0, 1),
 			},
-			wantErr: fmt.Errorf("no domain in token"),
+			wantErr: ErrDomainNotFound,
 		},
 		{
 			name: "isValid no name",
@@ -1087,7 +1081,7 @@ func Test_rawToken_isValid(t *testing.T) {
 				signature:  "dummySign",
 				expiration: time.Now().AddDate(0, 0, 1),
 			},
-			wantErr: fmt.Errorf("no name in token"),
+			wantErr: ErrServiceNameNotFound,
 		},
 		{
 			name: "isValid no signature",
@@ -1097,7 +1091,7 @@ func Test_rawToken_isValid(t *testing.T) {
 				signature:  "",
 				expiration: time.Now().AddDate(0, 0, 1),
 			},
-			wantErr: fmt.Errorf("no signature in token"),
+			wantErr: ErrSignatureNotFound,
 		},
 	}
 	for _, tt := range tests {
