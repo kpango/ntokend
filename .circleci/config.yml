@@ -47,7 +47,7 @@ jobs:
           command: |
             mkdir -p $HOME/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
             LAST_COMMIT=`git log -1 --pretty=%B`
-            VERSION=`git describe --abbrev=0 --tags`
+            VERSION=$(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=1))
             touch ./.tag
             if [ ! -z "`git diff $VERSION`" -o -z "$VERSION" ]; then
               VERSION=${VERSION:-'0.0.0'}
