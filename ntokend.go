@@ -9,6 +9,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/kpango/fastime"
 	"github.com/kpango/glg"
 	"github.com/yahoo/athenz/libs/go/zmssvctoken"
 )
@@ -65,9 +66,11 @@ func New(opts ...Option) (TokenService, error) {
 	if err != nil || tokBuilder == nil {
 		return nil, ErrTokenBuilder(tok.athenzDomain, tok.serviceName, tok.keyVersion, err)
 	}
+
 	if tok.hostname != "" {
 		tokBuilder.SetHostname(tok.hostname)
 	}
+
 	if tok.ipAddr != "" {
 		tokBuilder.SetIPAddress(tok.ipAddr)
 	}
@@ -181,6 +184,7 @@ func newRawToken(token string) *rawToken {
 		if len(parts) != 2 {
 			continue
 		}
+
 		switch parts[0] {
 		case "d": // Domain
 			t.domain = parts[1]
@@ -191,7 +195,7 @@ func newRawToken(token string) *rawToken {
 		case "e": // Expiration
 			parsed, err := strconv.ParseInt(parts[1], 0, 64)
 			if err != nil {
-				t.expiration = time.Now().Add(time.Second * 30)
+				t.expiration = fastime.Now().Add(time.Second * 30)
 			} else {
 				t.expiration = time.Unix(parsed, 0)
 			}
@@ -209,7 +213,7 @@ func (r *rawToken) isValid() error {
 		return ErrServiceNameNotFound
 	case r.signature == "":
 		return ErrSignatureNotFound
-	case r.expiration.Before(time.Now()):
+	case r.expiration.Before(fastime.Now()):
 		return ErrExpirationNotFound
 	}
 	return nil
