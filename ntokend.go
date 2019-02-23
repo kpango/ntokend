@@ -214,7 +214,7 @@ func (r *rawToken) isValid() error {
 	case r.signature == "":
 		return ErrSignatureNotFound
 	case r.expiration.Before(fastime.Now()):
-		return ErrExpirationNotFound
+		return ErrTokenExpired
 	}
 	return nil
 }

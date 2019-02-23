@@ -10,7 +10,7 @@ var (
 	ErrDomainNotFound      = errors.New("error:\tno domain in token")
 	ErrServiceNameNotFound = errors.New("error:\tno service name in token")
 	ErrSignatureNotFound   = errors.New("error:\tno signature in token")
-	ErrExpirationNotFound  = errors.New("error:\ttoken has expired")
+	ErrTokenExpired        = errors.New("error:\ttoken has expired")
 	ErrTokenBuilder        = func(dom, svc, kv string, err error) error {
 		return errors.Wrapf(err, "failed to create ZMS SVC Token Builder\nAthenzDomain:\t%s\nServiceName:\t%s\nKeyVersion:\t%s", dom, svc, kv)
 	}
