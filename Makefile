@@ -5,6 +5,7 @@ GO_VERSION:=$(shell go version)
 all: clean init lint test
 
 clean:
+	go clean -modcache
 	rm -rf ./*.log
 	rm -rf ./*.svg
 	rm -rf ./go.mod
@@ -26,3 +27,8 @@ test: clean init
 
 contributors:
 	git log --format='%aN <%aE>' | sort -fu > CONTRIBUTORS
+
+deps: clean
+	go mod init
+	go mod vendor
+	rm -rf vendor
