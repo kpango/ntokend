@@ -6,5 +6,5 @@ require (
 	github.com/kpango/fastime v1.0.15
 	github.com/kpango/glg v1.4.6
 	github.com/pkg/errors v0.8.1
-	github.com/yahoo/athenz v1.8.25
+	github.com/yahoo/athenz v1.8.32
 )
