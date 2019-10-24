@@ -755,7 +755,7 @@ func Test_token_loadToken(t *testing.T) {
 	}
 }
 
-func Test_token_update(t *testing.T) {
+func Test_token_Update(t *testing.T) {
 	type fields struct {
 		tokenFilePath   string
 		token           *atomic.Value
@@ -814,7 +814,7 @@ func Test_token_update(t *testing.T) {
 				refreshDuration: tt.fields.refreshDuration,
 				builder:         tt.fields.builder,
 			}
-			err := tok.update()
+			err := tok.Update()
 
 			if tt.checkFunc != nil {
 				if e := tt.checkFunc(tok); e != nil {

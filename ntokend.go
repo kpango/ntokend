@@ -17,6 +17,7 @@ import (
 // TokenService represents a interface for user to get the token, and automatically update the token
 type TokenService interface {
 	StartTokenUpdater(context.Context) TokenService
+	Update() error
 	TokenExists() bool
 	GetTokenProvider() TokenProvider
 }
@@ -85,7 +86,7 @@ func New(opts ...Option) (TokenService, error) {
 func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 	go func() {
 		var err error
-		err = t.update()
+		err = t.Update()
 		fch := make(chan struct{})
 		if err != nil {
 			glg.Error(err)
@@ -99,14 +100,14 @@ func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 				ticker.Stop()
 				return
 			case <-fch:
-				err = t.update()
+				err = t.Update()
 				if err != nil {
 					glg.Error(err)
 					time.Sleep(time.Second)
 					fch <- struct{}{}
 				}
 			case <-ticker.C:
-				err = t.update()
+				err = t.Update()
 				if err != nil {
 					glg.Error(err)
 					fch <- struct{}{}
@@ -172,7 +173,8 @@ func (t *token) loadToken() (ntoken string, err error) {
 	return ntoken, nil
 }
 
-func (t *token) update() error {
+// Update will load the ntoken and set it to the cache.
+func (t *token) Update() error {
 	token, err := t.loadToken()
 	if err != nil {
 		return err
