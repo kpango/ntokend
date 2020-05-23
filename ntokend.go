@@ -57,8 +57,8 @@ func New(opts ...Option) (TokenService, error) {
 		token: new(atomic.Value),
 	}
 
-	for _, to := range opts {
-		if err := to(tok); err != nil {
+	for _, opt := range append(defaultOpts, opts...) {
+		if err := opt(tok); err != nil {
 			return nil, err
 		}
 	}

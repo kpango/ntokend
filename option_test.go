@@ -217,3 +217,23 @@ func TestIPAddr(t *testing.T) {
 		})
 	}
 }
+
+func TestFailureSleepDuration(t *testing.T) {
+	type args struct {
+		dur time.Duration
+	}
+	tests := []struct {
+		name string
+		args args
+		want Option
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FailureSleepDuration(tt.args.dur); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FailureSleepDuration() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

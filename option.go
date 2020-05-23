@@ -5,6 +5,12 @@ import "time"
 // Option represents a functional options pattern interface
 type Option func(*token) error
 
+var (
+	defaultOpts = []Option{
+		FailureSleepDuration(time.Second),
+	}
+)
+
 // TokenFilePath represents a functional options pattern setter method to set the token file path value
 func TokenFilePath(path string) Option {
 	return func(tok *token) error {
@@ -41,6 +47,14 @@ func TokenExpiration(dur time.Duration) Option {
 func RefreshDuration(dur time.Duration) Option {
 	return func(tok *token) error {
 		tok.refreshDuration = dur
+		return nil
+	}
+}
+
+// FaiFailureSleepDuration represents a functional options pattern setter method to set the token fetch failure retry sleep duration
+func FailureSleepDuration(dur time.Duration) Option {
+	return func(tok *token) error {
+		tok.failureSleepDuration = dur
 		return nil
 	}
 }
