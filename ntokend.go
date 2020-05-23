@@ -23,12 +23,13 @@ type TokenService interface {
 }
 
 type token struct {
-	tokenFilePath   string
-	token           *atomic.Value
-	validateToken   bool
-	tokenExpiration time.Duration
-	refreshDuration time.Duration
-	builder         zmssvctoken.TokenBuilder
+	tokenFilePath        string
+	token                *atomic.Value
+	validateToken        bool
+	tokenExpiration      time.Duration
+	refreshDuration      time.Duration
+	failureSleepDuration time.Duration
+	builder              zmssvctoken.TokenBuilder
 
 	// token builder parameters
 	athenzDomain string
@@ -87,10 +88,14 @@ func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 	go func() {
 		var err error
 		err = t.Update()
-		fch := make(chan struct{})
+		fch := make(chan struct{}, 2)
 		if err != nil {
 			glg.Error(err)
-			fch <- struct{}{}
+			select {
+			case <-ctx.Done():
+				return
+			case fch <- struct{}{}:
+			}
 		}
 
 		ticker := time.NewTicker(t.refreshDuration)
@@ -103,14 +108,30 @@ func (t *token) StartTokenUpdater(ctx context.Context) TokenService {
 				err = t.Update()
 				if err != nil {
 					glg.Error(err)
-					time.Sleep(time.Second)
-					fch <- struct{}{}
+					timer := time.NewTimer(t.failureSleepDuration)
+					select {
+					case <-ctx.Done():
+						timer.Stop()
+						return
+					case <-timer.C:
+						timer.Stop()
+						select {
+						case <-ctx.Done():
+							return
+						case fch <- struct{}{}:
+						}
+					}
 				}
 			case <-ticker.C:
 				err = t.Update()
 				if err != nil {
 					glg.Error(err)
-					fch <- struct{}{}
+					select {
+					case <-ctx.Done():
+						return
+					case fch <- struct{}{}:
+					}
+
 				}
 			}
 		}
