@@ -9,9 +9,9 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/AthenZ/athenz/libs/go/zmssvctoken"
 	"github.com/kpango/fastime"
 	"github.com/kpango/glg"
-	"github.com/yahoo/athenz/libs/go/zmssvctoken"
 )
 
 // TokenService represents a interface for user to get the token, and automatically update the token
