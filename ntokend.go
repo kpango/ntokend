@@ -186,7 +186,7 @@ func (t *token) loadToken() (ntoken string, err error) {
 	}
 
 	if t.validateToken {
-		err = newRawToken(ntoken).isValid()
+		err = newRawToken(ntoken, t.tokenExpiration).isValid()
 		if err != nil {
 			return "", ErrInvalidToken(err)
 		}
@@ -210,7 +210,7 @@ func (t *token) setToken(token string) {
 
 // newRawToken returns the rawToken pointer.
 // This function parse the token string, and transform to rawToken struct.
-func newRawToken(token string) *rawToken {
+func newRawToken(token string, defaultExp time.Duration) *rawToken {
 	t := new(rawToken)
 	for _, field := range strings.Split(token, ";") {
 		parts := strings.SplitN(field, "=", 2)
@@ -228,7 +228,7 @@ func newRawToken(token string) *rawToken {
 		case "e": // Expiration
 			parsed, err := strconv.ParseInt(parts[1], 0, 64)
 			if err != nil {
-				t.expiration = fastime.Now().Add(time.Second * 30)
+				t.expiration = fastime.Now().Add(defaultExp)
 			} else {
 				t.expiration = time.Unix(parsed, 0)
 			}

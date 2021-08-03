@@ -8,6 +8,7 @@ type Option func(*token) error
 var (
 	defaultOpts = []Option{
 		FailureSleepDuration(time.Second),
+		TokenExpiration(time.Second * 30),
 	}
 )
 
@@ -38,7 +39,9 @@ func DisableValidate() Option {
 // TokenExpiration represents a functional options pattern setter method to set the token expiration period
 func TokenExpiration(dur time.Duration) Option {
 	return func(tok *token) error {
-		tok.tokenExpiration = dur
+		if dur > time.Millisecond {
+			tok.tokenExpiration = dur
+		}
 		return nil
 	}
 }

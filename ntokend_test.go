@@ -900,14 +900,16 @@ func Test_token_setToken(t *testing.T) {
 
 func Test_newRawToken(t *testing.T) {
 	type args struct {
-		token string
+		token      string
+		defaultExp time.Duration
 	}
-	tests := []struct {
+	type test struct {
 		name      string
 		args      args
 		checkFunc func(got, want *rawToken) error
 		want      *rawToken
-	}{
+	}
+	tests := []test{
 		{
 			name: "newRawToken parse success",
 			args: args{
@@ -926,28 +928,32 @@ func Test_newRawToken(t *testing.T) {
 				expiration: time.Unix(50000, 0),
 			},
 		},
-		{
-			name: "newRawToken parse expiration failed",
-			args: args{
-				token: fmt.Sprintf("%v;%v;%v;%v", "d=dummyDomain", "n=dummyName", "s=dummySign", "e=dummy"),
-			},
-			checkFunc: func(got, want *rawToken) error {
-				// because time difference of got and want time.Now() function call, we have to round the expiration before checking
-				gotExp := got.expiration.Round(time.Second)
-				wantExp := want.expiration.Round(time.Second)
+		func() test {
+			exp := time.Second * 30
+			return test{
+				name: "newRawToken parse expiration failed",
+				args: args{
+					token:      fmt.Sprintf("%v;%v;%v;%v", "d=dummyDomain", "n=dummyName", "s=dummySign", "e=dummy"),
+					defaultExp: exp,
+				},
+				checkFunc: func(got, want *rawToken) error {
+					// because time difference of got and want time.Now() function call, we have to round the expiration before checking
+					gotExp := got.expiration.Round(time.Second)
+					wantExp := want.expiration.Round(time.Second)
 
-				if !reflect.DeepEqual(gotExp, wantExp) {
-					return fmt.Errorf("got: %v, want: %v", got, want)
-				}
-				return nil
-			},
-			want: &rawToken{
-				domain:     "dummyDomain",
-				name:       "dummyName",
-				signature:  "dummySign",
-				expiration: time.Now().Add(time.Second * 30),
-			},
-		},
+					if !reflect.DeepEqual(gotExp, wantExp) {
+						return fmt.Errorf("got: %v, want: %v", got, want)
+					}
+					return nil
+				},
+				want: &rawToken{
+					domain:     "dummyDomain",
+					name:       "dummyName",
+					signature:  "dummySign",
+					expiration: time.Now().Add(exp),
+				},
+			}
+		}(),
 		{
 			name: "newRawToken parse success with empty pair",
 			args: args{
@@ -1023,7 +1029,7 @@ func Test_newRawToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := newRawToken(tt.args.token)
+			got := newRawToken(tt.args.token, tt.args.defaultExp)
 			if err := tt.checkFunc(got, tt.want); err != nil {
 				t.Errorf("newRawToken() error: %v", err)
 			}
