@@ -1,7 +1,8 @@
 package ntokend
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
 )
 
 var (
@@ -12,9 +13,18 @@ var (
 	ErrSignatureNotFound   = errors.New("error:\tno signature in token")
 	ErrTokenExpired        = errors.New("error:\ttoken has expired")
 	ErrTokenBuilder        = func(dom, svc, kv string, err error) error {
-		return errors.Wrapf(err, "failed to create ZMS SVC Token Builder\nAthenzDomain:\t%s\nServiceName:\t%s\nKeyVersion:\t%s", dom, svc, kv)
+		return Wrapf(err, "failed to create ZMS SVC Token Builder\nAthenzDomain:\t%s\nServiceName:\t%s\nKeyVersion:\t%s", dom, svc, kv)
 	}
 	ErrInvalidToken = func(err error) error {
-		return errors.Wrap(err, "invalid server identity token")
+		return Wrap(err, "invalid server identity token")
+	}
+	Wrap = func(err error, msg string) error {
+		if err != nil {
+			if msg != "" && err.Error() != msg {
+				return fmt.Errorf("%s: %w", msg, err)
+			}
+			return err
+		}
+		return New(msg)
 	}
 )
